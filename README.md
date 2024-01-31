@@ -47,7 +47,7 @@ Have general files organize according to the extension map present in the script
 I made this as a cli script keeping in mind that i needed a one line solution.
 
 
-### Contributing Guidelines
+## Contributing Guidelines
 
 Please raise an issue and create a pull request to main branch only
 

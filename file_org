@@ -1,0 +1,136 @@
+#! /usr/bin/env python
+# from pathlib import Path
+import argparse
+import os
+from pathlib import Path
+from shutil import move as move_file
+import sys
+
+ext_map = {
+    "png": "Images",
+    "jpg": "Images",
+    "mp4": "Videos",
+    "mp3": "Musics",
+    "pdf": "Documents",
+    "docx": "Documents",
+    "zip": "Compressed",
+}
+
+# parsing the cli arguments which is required
+parser = argparse.ArgumentParser(
+    prog="./file_org",
+    description="Organize files in a given directory according to their file extensions",
+)
+parser.add_argument(
+    "dir",
+    nargs="?",
+    help="absolute path to the directory you want organized",
+    type=Path,
+)
+
+
+def check_for_unknown_files(base_path):
+    files = create_files_list(base_path)
+    all_extensions = set(map(lambda x: x.split(".")[-1], files))
+    unknown_ext = [ext for ext in all_extensions if ext not in ext_map]
+    return unknown_ext
+
+
+def prompt_user_for_directories(unknown_ext=None):
+    if not unknown_ext:
+        print("No unknown extensions found in the folder")
+        return
+    for un_ext in unknown_ext:
+        new_folder = input(
+            f"Write the name of the folder you want files ending with '.{un_ext}' to be organized in: "
+        )
+        while not new_folder.strip():
+            new_folder = input(
+                f"Write the name of the folder you want files ending with '.{un_ext}' to be organized in: "
+            )
+        ext_map[un_ext] = new_folder.strip().title()
+
+
+# order is preserved and no duplicates are there
+def create_directory_list(ext_map):
+    return tuple(dict.fromkeys(ext_map.values()))
+
+
+# files list from the directory
+def create_files_list(base_path):
+    """Creates a list of files present in the given path to directory
+
+    Args:
+        base_path (str): path to the directory to be organized
+
+    Returns:
+        List[str]: returns a list of only files present in the directory
+    """
+    try:
+        return tuple([value.name for value in os.scandir(base_path) if value.is_file()])
+    except FileNotFoundError as e:
+        print(f"{e.strerror}: {e.filename}\n")
+        print("Please Recheck your path to the directory and try again")
+        sys.exit(1)
+
+
+# create the directory if it not exists
+def create_directories(list_of_dirs):
+    """Creates the directories from the list provided in the folder specified
+
+    Args:
+        list_of_dirs (List[str]): list of all the files present in the directory
+    """
+    print(f"\n{'Creating Directories':_^50}\n")
+    for dir in list_of_dirs:
+        try:
+            dir_path = os.path.join(base_path, dir)
+            os.mkdir(dir_path)
+            print(f"Directory Created: {dir_path}")
+        except FileExistsError as e:
+            print(f"Directory Already Exists: {e.filename}")
+        except FileNotFoundError as e:
+            print(f"{e}")
+            sys.exit(1)
+
+
+def move_operation(files_list):
+    """Organise the files into their respective directories
+
+    Args:
+        files_list (List[str]): File names in string format
+    """
+    if not files_list:
+        print("\nNo files in the current directory\n")
+        return
+    print(f"\n{'Commencing Move Operation':_^50}\n")
+    for file in files_list:
+        try:
+            file_ext = file.split(".")[-1]
+            dst_path = os.path.join(base_path, ext_map[file_ext], file)
+            src_path = os.path.join(base_path, file)
+            move_file(src_path, dst_path)
+            print(f"file moved from: {src_path} to: {dst_path}")
+        except KeyError as e:
+            print(e.args[0])
+
+
+def main(base_path):
+    # step 1 check for unknown files
+    unknown_file_ext = check_for_unknown_files(base_path)
+    # step 2 prompt the user for needed directories
+    prompt_user_for_directories(unknown_file_ext)
+    # step 3 create the directories list
+    list_of_dirs = create_directory_list(ext_map)
+    # step 4 create the files list
+    list_of_files = create_files_list(base_path)
+    # step 5 create the directories
+    create_directories(list_of_dirs)
+    # step 6 move the files to their respective dirs
+    move_operation(list_of_files)
+
+
+if __name__ == "__main__":
+    args = parser.parse_args()
+    base_path = args.dir
+    main(base_path)

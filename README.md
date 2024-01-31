@@ -16,7 +16,7 @@ Have general files organize according to the extension map present in the script
 
 1. Clone this directory into a preferred location on your device (copy this command in your terminal)
 ```bash
-    git clone
+    git clone https://github.com/AlphaCeph-C3/file_organiser_script.git .
 ```
 2. Change the file permissions to make it executable:
 ```bash
